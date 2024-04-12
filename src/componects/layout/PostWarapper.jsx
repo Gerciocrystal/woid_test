@@ -48,13 +48,13 @@ const PostWarapper = () => {
       alignItems="start"
       divider={<Divider />}
     >
-      {/* {queryPosts.isLoading ? (
+      {queryPosts.isLoading ? (
         <SkeletonContainer />
-      ) : ( */}
-      {posts.map((post, index) => (
-        <Post key={index + `_key_` + post?.description} post={post} />
-      ))}
-      {/* )} */}
+      ) : (
+        posts.map((post, index) => (
+          <Post key={index + `_key_` + post?.description} post={post} />
+        ))
+      )}
     </VStack>
   );
 };
