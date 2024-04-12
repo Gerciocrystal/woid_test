@@ -14,14 +14,44 @@ import {
   ModalHeader,
   ModalOverlay,
   useToast,
+  FormControl,
+  FormErrorMessage,
+  FormLabel,
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import InputField from "../forms/InputField";
 import PostService from "../../services/PostService";
+import FileBase from "react-file-base64";
 import { createNewPost } from "../config/handlePost";
+import { UseAuth } from "../../context/UseAuth";
 const AddPost = ({ isOpen, onClose, type }) => {
   const [loading, setLoading] = useState();
   const Toast = useToast();
+  const [base64File, setBase64File] = useState("");
+  const { setFecthAgain, fetchAgain, setNewPost } = UseAuth();
+  const [errorState, setErrorState] = useState({
+    photo: false,
+  });
+  const handleImageChange = (base64) => {
+    if (!base64.type.startsWith("image/")) {
+      setErrorState({
+        ...errorState,
+        photo: true,
+        message: "Arquivo Inválido",
+      });
+      Toast({
+        description: "Somente Imagens",
+        isClosable: true,
+        position: "top",
+        status: "error",
+        duration: 5000,
+      });
+      return;
+    }
+    setBase64File(base64.base64);
+    setErrorState({ ...errorState, photo: false });
+    // Armazene a string base64 da imagem em um estado ou envie para o backend
+  };
   const {
     register,
     handleSubmit,
@@ -30,19 +60,30 @@ const AddPost = ({ isOpen, onClose, type }) => {
   } = useForm();
   const savePost = async (data) => {
     setLoading(true);
+    if (type == "photo" && !base64File) {
+      setErrorState({
+        ...errorState,
+        photo: true,
+      });
+      return;
+    }
     const schema = {
       ...data,
+      type,
+      image: base64File,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     try {
-      const response = await PostService.savePost(schema);
-      console.log(response);
+      await PostService.savePost(schema);
       Toast({
         description: "Post Enviado com sucesso",
         status: "success",
         position: "top",
+        isClosable: true,
       });
+      onClose();
+      reset();
     } catch (error) {
       if (!error) {
         Toast({
@@ -53,6 +94,7 @@ const AddPost = ({ isOpen, onClose, type }) => {
         });
       } else {
         createNewPost(schema);
+        setNewPost(schema);
         Toast({
           title: "Post Salvo",
           description: "Conecte-se a internet para ter o seu post Enviado",
@@ -60,9 +102,12 @@ const AddPost = ({ isOpen, onClose, type }) => {
           position: "top",
           isClosable: true,
         });
+        onClose();
+        reset();
       }
     } finally {
       setLoading(false);
+      setFecthAgain(!fetchAgain);
     }
   };
   let user = localStorage.getItem("user_post");
@@ -94,23 +139,55 @@ const AddPost = ({ isOpen, onClose, type }) => {
                   required={true}
                 />
               )}
-              <InputField
-                title="Titulo"
-                register={register}
-                name="title"
-                error={errors.title}
-                required="true"
-                placeholder="eggs: O Problema da fome em Moçambique"
-              />
-              <InputField
-                title="Descrição"
-                register={register}
-                name="description"
-                type="textarea"
-                error={errors.description}
-                required="true"
-                placeholder="eggs: A fome pode ser caracterizada pela falta ...."
-              />
+              {type == "photo" ? (
+                <InputField
+                  title="Descreva a situação"
+                  register={register}
+                  name="title"
+                  error={errors.title}
+                  required="true"
+                  placeholder="eggs: Numa praia com os meus amigos mateo e "
+                />
+              ) : (
+                <InputField
+                  title="Descrição"
+                  register={register}
+                  name="description"
+                  type="textarea"
+                  error={errors.description}
+                  required="true"
+                  placeholder="eggs: A fome pode ser caracterizada pela falta ...."
+                />
+              )}
+              {type == "photo" && (
+                <FormControl
+                  isInvalid={errorState.photo}
+                  overflowX="hidden"
+                  htmlFor="photo_upload"
+                >
+                  <FormLabel>Foto</FormLabel>
+                  <Box
+                    height="320px"
+                    border={`1px solid ${errorState.photo ? "red" : "#dff8ff"}`}
+                    borderRadius="base"
+                    p={2}
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                  >
+                    <FileBase
+                      id="photo_upload"
+                      type="file"
+                      multiple={false} // Defina como false para selecionar apenas uma imagem
+                      onDone={handleImageChange}
+                    />
+                  </Box>
+                  <FormErrorMessage>
+                    {errorState.photo &&
+                      (errorState?.message || "foto obrigatoria")}
+                  </FormErrorMessage>
+                </FormControl>
+              )}
             </Box>
           </ModalBody>
           <ModalFooter>
@@ -118,7 +195,7 @@ const AddPost = ({ isOpen, onClose, type }) => {
               <Button colorScheme="blue" isLoading={loading} type="submit">
                 Enviar
               </Button>
-              <Button>Fechar</Button>
+              <Button onClick={onClose}>Fechar</Button>
             </HStack>
           </ModalFooter>
         </form>

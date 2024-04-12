@@ -17,12 +17,14 @@ import MenuIcons from "./misselation/MenuIcons";
 import { MdOutlineAddPhotoAlternate } from "react-icons/md";
 import AddPost from "./modals/AddPost";
 import { getPosts } from "./config/handlePost";
+import { UseAuth } from "../context/UseAuth";
 
-const Header = ({ fecthAgain, setFecthAgain }) => {
+const Header = () => {
   let notification = getPosts() ? getPosts() : [];
-  console.log();
+
   const { onOpen, isOpen, onClose } = useDisclosure();
-  const [postType, setPostType] = useState();
+  const { fecthAgain, setFecthAgain } = UseAuth();
+  const [postType, setPostType] = useState("post");
   const changeType = (type) => {
     setFecthAgain(!fecthAgain);
     setPostType(type);
@@ -43,6 +45,7 @@ const Header = ({ fecthAgain, setFecthAgain }) => {
       <Box
         display="flex"
         justifyContent="center"
+        alignItems="center"
         gap={2}
         order={{ base: 3, md: 2 }}
         width={{ base: "100%", md: "40%" }}
@@ -53,7 +56,7 @@ const Header = ({ fecthAgain, setFecthAgain }) => {
           <MenuIcons
             Icon={MdPostAdd}
             background="blue"
-            onOpen={() => onOpen("post")}
+            onOpen={() => changeType("post")}
           />
           <MenuIcons
             Icon={MdOutlineAddPhotoAlternate}
@@ -80,7 +83,7 @@ const Header = ({ fecthAgain, setFecthAgain }) => {
           effect={Effect.SCLALE}
         />
       </Button>
-      <AddPost isOpen={isOpen} onClose={onClose} />
+      <AddPost isOpen={isOpen} onClose={onClose} type={postType} />
     </Box>
   );
 };

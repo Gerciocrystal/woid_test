@@ -49,7 +49,9 @@ class UsersService {
         } else if (error.response.status == 401) {
           throw new Error("Token expirado");
         } else
-          throw new Error(error?.response?.data?.message || "Erro Interno");
+          throw new Error(
+            error?.response?.data?.message || "O Servidor esta offline"
+          );
       } else {
         throw new Error("Verifique a sua Internet");
       }
